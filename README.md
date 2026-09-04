@@ -22,7 +22,6 @@ The processor is designed to execute basic arithmetic, immediate, load, and bran
 - Immediate generation unit
 - Branch target computation
 - Pipeline registers between all stages
-- Data hazard resolution using forwarding logic
 - RTL verification using Xilinx Vivado
 
 ---
@@ -60,23 +59,7 @@ IF → ID → EX → MEM → WB
 
 ---
 
-## Hazard Handling
 
-To resolve **Read After Write (RAW)** hazards, forwarding logic is implemented.
-
-### Forwarding paths:
-- **MEM → EX**
-- **WB → EX**
-
-### Forwarding control:
-
-```text
-00 → No forwarding
-01 → Forward from Writeback stage
-10 → Forward from Memory stage
-```
-
----
 ## Simulation
 
 Simulation was performed using:
@@ -90,7 +73,7 @@ Waveforms verified:
 - Execute stage ALU computation
 - Memory read/write
 - Writeback result generation
-- Hazard forwarding behavior
+
 
 ---
 
