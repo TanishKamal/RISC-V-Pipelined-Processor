@@ -5,52 +5,77 @@ module Execute_Cycle(clk, rst,
     RD_E, PCE, PCPlus4E,
     PCSrcE, PCTargetE,
     RegWriteM, MemWriteM, ResultSrcM,
-    RD_M, PCPlus4M, WriteDataM, ALU_ResultM,
-    ResultW,
-    ALU_ResultM_in,
-    ForwardA_E, ForwardB_E
-
+    RD_M, PCPlus4M, WriteDataM, ALU_ResultM
     );
-    input clk, rst;
-input RegWriteE, ALUSrcE, MemWriteE, ResultSrcE, BranchE;
-input [2:0] ALUControlE;
-input [31:0] RD1_E, RD2_E, Imm_Ext_E;
-input [4:0] RD_E;
-input [31:0] PCE, PCPlus4E;
-input [31:0] ResultW;
-input [31:0] ALU_ResultM_in;
-input [1:0] ForwardA_E, ForwardB_E;
 
-output PCSrcE, RegWriteM, MemWriteM, ResultSrcM;
+input clk, rst;
+
+input RegWriteE;
+input ALUSrcE;
+input MemWriteE;
+input ResultSrcE;
+input BranchE;
+
+input [2:0] ALUControlE;
+
+input [31:0] RD1_E;
+input [31:0] RD2_E;
+input [31:0] Imm_Ext_E;
+
+input [4:0] RD_E;
+
+input [31:0] PCE;
+input [31:0] PCPlus4E;
+
+output PCSrcE;
+output RegWriteM;
+output MemWriteM;
+output ResultSrcM;
+
 output [4:0] RD_M;
-output [31:0] PCPlus4M, WriteDataM, ALU_ResultM;
+
+output [31:0] PCPlus4M;
+output [31:0] WriteDataM;
+output [31:0] ALU_ResultM;
+
 output [31:0] PCTargetE;
+
+
+
+// Internal signals
+
 
 wire [31:0] Src_A;
 wire [31:0] Src_B_interim;
 wire [31:0] Src_B;
+
 wire [31:0] ResultE;
+
 wire ZeroE;
 
-reg RegWriteE_r, MemWriteE_r, ResultSrcE_r;
+
+
+// Pipeline registers
+
+
+reg RegWriteE_r;
+reg MemWriteE_r;
+reg ResultSrcE_r;
+
 reg [4:0] RD_E_r;
-reg [31:0] PCPlus4E_r, RD2_E_r, ResultE_r;
 
-Mux_3_by_1 srca_mux(
-    .a(RD1_E),
-    .b(ResultW),
-    .c(ALU_ResultM_in),
-    .s(ForwardA_E),
-    .d(Src_A)
-);
+reg [31:0] PCPlus4E_r;
+reg [31:0] RD2_E_r;
+reg [31:0] ResultE_r;
 
-Mux_3_by_1 srcb_mux(
-    .a(RD2_E),
-    .b(ResultW),
-    .c(ALU_ResultM_in),
-    .s(ForwardB_E),
-    .d(Src_B_interim)
-);
+assign Src_A = RD1_E;
+assign Src_B_interim = RD2_E;
+
+
+
+// ALU SOURCE MUX
+// ALUSrcE = 0 → register value
+// ALUSrcE = 1 → immediate
 
 mux alu_src_mux(
     .a(Src_B_interim),
@@ -58,6 +83,10 @@ mux alu_src_mux(
     .s(ALUSrcE),
     .c(Src_B)
 );
+
+
+
+// ALU
 
 ALU alu(
     .A(Src_A),
@@ -70,14 +99,26 @@ ALU alu(
     .Negative()
 );
 
+
+
+// BRANCH TARGET
+
+
 PC_adder branch_adder(
     .a(PCE),
     .b(Imm_Ext_E),
     .c(PCTargetE)
 );
 
+
+
+// EX/MEM PIPELINE REGISTER
+
+
 always @(posedge clk or negedge rst) begin
+
     if(!rst) begin
+
         RegWriteE_r <= 0;
         MemWriteE_r <= 0;
         ResultSrcE_r <= 0;
@@ -85,8 +126,11 @@ always @(posedge clk or negedge rst) begin
         PCPlus4E_r <= 0;
         RD2_E_r <= 0;
         ResultE_r <= 0;
+
     end
+
     else begin
+
         RegWriteE_r <= RegWriteE;
         MemWriteE_r <= MemWriteE;
         ResultSrcE_r <= ResultSrcE;
@@ -94,10 +138,22 @@ always @(posedge clk or negedge rst) begin
         PCPlus4E_r <= PCPlus4E;
         RD2_E_r <= Src_B_interim;
         ResultE_r <= ResultE;
+
     end
+
 end
 
+
+
+// BRANCH DECISION
+
+
 assign PCSrcE = ZeroE & BranchE;
+
+
+
+// EX/MEM OUTPUTS
+
 
 assign RegWriteM = RegWriteE_r;
 assign MemWriteM = MemWriteE_r;
@@ -106,4 +162,5 @@ assign RD_M = RD_E_r;
 assign PCPlus4M = PCPlus4E_r;
 assign WriteDataM = RD2_E_r;
 assign ALU_ResultM = ResultE_r;
+
 endmodule
