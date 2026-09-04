@@ -11,7 +11,7 @@ module pipeline_tb(
         rst <= 1'b0;
         #200;
         rst <= 1'b1;
-        #1200;
+        #3000;
         $finish;    
     end
      Pipeline_top dut (.clk(clk), .rst(rst));
